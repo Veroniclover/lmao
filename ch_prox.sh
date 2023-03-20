@@ -2,16 +2,17 @@
 connect_proxy(){
 	path_config="${1}"
 	[[ -e "${path_config}" ]] || { printf '%s\n' "Error: Config Not found" ; return 1 ;}
-	sudo openvpn --config "${path_config}" --daemon --log openvpn.log --writepid openvpn.pid --connect-retry-max 3 &
+	sudo openvpn --config "${path_config}" --daemon --log openvpn.log --writepid openvpn.pid --connect-retry-max 3 --server-poll-timeout 20 &
 	while :; do
 		if [[ -e "openvpn.log" ]]; then
                      sudo grep -Eiq 'SIGUSR1|TLS Error: TLS handshake failed|Fatal TLS error|Restart pause' && break
                      sudo grep -iq "Initialization Sequence Completed" "openvpn.log" && exit 0
-                     echo "stat #$((i+=1))"
+                     echo "stat #$((stat+=1))"
+		     [[ "${i}" -gt 25 ]] && { unset stat ; break ;}
                 fi
-		sleep 3
+		sleep 5
 	done
-	[[ -e "openvpn.pid" ]] && { sudo kill "$(<openvpn.pid)" 2>/dev/null || true ;}
+	[[ -e "openvpn.pid" ]] && { sudo kill "$(sudo cat openvpn.pid)" 2>/dev/null || true ;}
 	{ rm -f openvpn.* chips.ovpn 2>/dev/null || true ;}
 	unset path_config pid_vpn
 	return 1
