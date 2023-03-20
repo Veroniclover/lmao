@@ -8,7 +8,7 @@ connect_proxy(){
                      sudo grep -Eiq 'SIGUSR1|TLS Error: TLS handshake failed|Fatal TLS error|Restart pause' && break
                      sudo grep -iq "Initialization Sequence Completed" "openvpn.log" && exit 0
                      echo "stat #$((stat+=1))"
-		     [[ "${i}" -gt 25 ]] && { unset stat ; break ;}
+		     [[ "${stat}" -gt 25 ]] && { unset stat ; break ;}
                 fi
 		sleep 5
 	done
