@@ -8,4 +8,4 @@ while [[ "$((i+=1))" -le "${posting}" ]]; do
 done
 # Update about
 total_archived="almost $(wc -l < log.txt) has been successfully from March 21, 2023 until now"
-curl -sLk -X POST "https://graph.facebook.com/me/?about=${total_archived}&access_token=${1}" || true
+curl -sLk -X POST "https://graph.facebook.com/me/?access_token=${1}" --data-urlencode "about=${total_archived}" || true
