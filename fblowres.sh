@@ -26,16 +26,16 @@ com_commenter(){
 		sleep 10
 		if [ -n "${imglnk}" ]; then
 			curl -sL "${imglnk}" -o com_tmp.jpg
-			curl -sL -X POST \
+			curl -sLf -X POST \
 				-F "message=${capt_compose}" \
 				-F "source=@com_tmp.jpg" \
 				-o /dev/null \
-			"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}"
+			"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit 1
 		else
-			curl -sL -X POST \
+			curl -sLf -X POST \
 				--data-urlencode "message=${capt_compose}" \
 				-o /dev/null \
-		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}"
+		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit 1
 		fi
 	done <<-EOF
 	${status_footer}
@@ -78,28 +78,28 @@ post_to_timeline(){
 			-F "source=@vid.mp4" \
 			-F "description=${capt_compose}" \
 		"${graph_url_main}/v16.0/me/videos" | \
-		sed -nE 's|.*id":"([^"]*)".*|\1|p')"
+		sed -nE 's|.*id":"([^"]*)".*|\1|p')" || exit 1
 	else
-		id_post="$(curl -sL -X POST \
+		id_post="$(curl -sLf -X POST \
 			-F "access_token=${token}" \
 			-F "source=@thumb.jpg" \
 			-F "message=${capt_compose}" \
 		"${graph_url_main}/v16.0/me/photos" | \
-		sed -nE 's|.*id":"([^"]*)".*|\1|p')"
+		sed -nE 's|.*id":"([^"]*)".*|\1|p')" || exit 1
 	fi
 	# comment another infos
 	sleep 10
 	if [ -n "${vid_link}" ]; then
-		curl -sL -X POST \
+		curl -sLf -X POST \
 			-F "message=${comment_compose_t}" \
 			-F "source=@thumb.jpg" \
 			-o /dev/null \
-		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}"
+		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit 1
 	else
-		curl -sL -X POST \
+		curl -sLf -X POST \
 			--data-urlencode "message=${comment_compose}" \
 			-o /dev/null \
-		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}"
+		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit 1
 	fi
 	
 	# comment some of the commentors
