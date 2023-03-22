@@ -132,7 +132,6 @@ while true; do
 	[[ "${post_loc}" =~ https:// ]] || post_loc="https://www.facebook.com${post_loc}"
 	post_id="${post_loc##*/}"
 	[[ -z "${post_id}" ]] && exit 1 ; [[ -z "${post_loc}" ]] && exit 1
-	curl -sLkf "${post_loc}" -o /dev/null || exit 1 
 	if grep -q "${post_id}" log.txt; then
 		unset rand_gr ids_arr encoded user thumbnail vid_link post_loc post_id
 		continue
