@@ -127,7 +127,7 @@ while true; do
 	[ -z "${encoded}" ] && exit 1
 	[ -e "log.txt" ] || : > log.txt
 	user="$(printf '%s' "${encoded}" | sed -nE 's_.*#flag#><span><strong><a[^>]*>([^<]*)<.*_\1_p')"
-	thumbnail="$(printf '%s' "${encoded}" | sed -nE 's_\\\\_\\_g;'"s|.*url\('(.*n.jpg[^']*)'.*|\1|p" | sed '/.png?/ s_.*__g')"
+	thumbnail="$(printf '%s' "${encoded}" | tr -dc '[:print:]' | sed -nE 's_\\\\_\\_g;'"s|.*url\('(.*n.jpg[^']*)'.*|\1|p" | sed '/.png?/ s_.*__g')"
 	[ -n "${thumbnail}" ] && thumbnail="$(printf '%b' "${thumbnail}")"
 
 	vid_link="$(printf '%b' "$(printf '%s' "${encoded}" | sed -nE 's|.*/video_redirect/\?src=([^"]*)".*|\1|p')")"
