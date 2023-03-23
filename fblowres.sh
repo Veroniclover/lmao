@@ -68,10 +68,10 @@ post_to_timeline(){
 	)"
 	
 	# dl files
-	if [ -z "${thumbnail}" ]; then
+	if [ -n "${thumbnail}" ]; then
 		curl -sLf "${thumbnail}" -o thumb.jpg || exit 1
 	fi
-	if [ -z "${vid_link}" ]; then
+	if [ -n "${vid_link}" ]; then
 		curl -sLf "${vid_link}" -o vid.mp4 || exit 1
 	fi
 	# upload now
