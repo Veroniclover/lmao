@@ -12,6 +12,10 @@ jobs:
  inits:
     runs-on: ubuntu-latest    
     steps:
+      - name: "wait"
+        run: wait 10
+        shell: bash
+
       - uses: actions/checkout@v3
       - name: "instdeps"
         run: |

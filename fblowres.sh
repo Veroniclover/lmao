@@ -25,7 +25,7 @@ com_commenter(){
 		)"
 		sleep 10
 		if [ -n "${imglnk}" ]; then
-			curl -sL "${imglnk}" -o com_tmp.jpg
+			curl -sLf "${imglnk}" -o com_tmp.jpg || exit 1
 			curl -sLf -X POST \
 				-F "message=${capt_compose}" \
 				-F "source=@com_tmp.jpg" \
@@ -68,24 +68,27 @@ post_to_timeline(){
 	)"
 	
 	# dl files
-	[ -z "${thumbnail}" ] || curl -sL "${thumbnail}" -o thumb.jpg
-	[ -z "${vid_link}" ] || curl -sL "${vid_link}" -o vid.mp4
-	
+	if [ -z "${thumbnail}" ]; then
+		curl -sLf "${thumbnail}" -o thumb.jpg || exit 1
+	fi
+	if [ -z "${vid_link}" ]; then
+		curl -sLf "${vid_link}" -o vid.mp4 || exit 1
+	fi
 	# upload now
 	if [ -n "${vid_link}" ]; then
-		id_post="$(curl -sL -X POST \
+		id_post="$(curl -sLf -X POST \
 			-F "access_token=${token}" \
 			-F "source=@vid.mp4" \
 			-F "description=${capt_compose}" \
-		"${graph_url_main}/v16.0/me/videos" | \
-		sed -nE 's|.*id":"([^"]*)".*|\1|p')" || exit 1
+		"${graph_url_main}/v16.0/me/videos")" || exit 1
+		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p' | grep '[^[:space:]]')" || exit 1 
 	else
 		id_post="$(curl -sLf -X POST \
 			-F "access_token=${token}" \
 			-F "source=@thumb.jpg" \
 			-F "message=${capt_compose}" \
-		"${graph_url_main}/v16.0/me/photos" | \
-		sed -nE 's|.*id":"([^"]*)".*|\1|p')" || exit 1
+		"${graph_url_main}/v16.0/me/photos")" || exit 1
+		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p' | grep '[^[:space:]]')" || exit 1
 	fi
 	# comment another infos
 	sleep 10
