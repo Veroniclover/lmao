@@ -81,14 +81,16 @@ post_to_timeline(){
 			-F "source=@vid.mp4" \
 			-F "description=${capt_compose}" \
 		"${graph_url_main}/v16.0/me/videos")" || exit 1
-		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p' | grep '[^[:space:]]')" || exit 1 
+		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p')"
+		[ -z "${id_post}" ] && exit 1
 	else
 		id_post="$(curl -sLf -X POST \
 			-F "access_token=${token}" \
 			-F "source=@thumb.jpg" \
 			-F "message=${capt_compose}" \
 		"${graph_url_main}/v16.0/me/photos")" || exit 1
-		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p' | grep '[^[:space:]]')" || exit 1
+		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p')"
+		[ -z "${id_post}" ] && exit 1
 	fi
 	# comment another infos
 	sleep 10
@@ -97,12 +99,12 @@ post_to_timeline(){
 			-F "message=${comment_compose_t}" \
 			-F "source=@thumb.jpg" \
 			-o /dev/null \
-		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit 1
+		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || { [ -n "${post_id}" ] && printf '%s\n' "${post_id}" >> log.txt ; exit 1 ;}
 	else
 		curl -sLf -X POST \
 			--data-urlencode "message=${comment_compose}" \
 			-o /dev/null \
-		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit 1
+		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || { [ -n "${post_id}" ] && printf '%s\n' "${post_id}" >> log.txt ; exit 1 ;}
 	fi
 	
 	# comment some of the commentors
