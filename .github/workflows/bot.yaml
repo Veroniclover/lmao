@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest    
     steps:
       - name: "wait"
-        run: wait 10
+        run: sleep 60
         shell: bash
 
       - uses: actions/checkout@v3
