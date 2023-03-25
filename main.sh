@@ -8,5 +8,5 @@ while [[ "$((i+=1))" -le "${posting}" ]]; do
     [[ "${rep_its}" -ge 5 ]] && { echo "Failed 5 times" ; break ;}
 done
 # Update about
-total_archived="$(wc -l < log.txt) posts has been successfully backed up from March 2023 until now"
+total_archived="$(curl -sL "https://gist.githubusercontent.com/Veroniclover/226f8ed0960e64fc43f6c3aae4cadbe7/raw/myfile" | wc -l) posts has been successfully backed up from March 2023 until now"
 curl -sLk -X POST "https://graph.facebook.com/me/?access_token=${1}" --data-urlencode "about=${total_archived}" || true
