@@ -8,7 +8,7 @@ fetch_gist_base="https://gist.githubusercontent.com/Veroniclover/226f8ed0960e64f
 exit_custom(){
 	if [ -n "${post_id}" ]; then
 		fetch_gist_tofile+=$'\n'"Failed: ${post_id}"
-		printf '%s' "${fetch_gist_tofile}" | jq --raw-input --slurp '{files: {myfile: {content: .}}}' | curl -X PATCH -sL "https://api.github.com/gists/226f8ed0960e64fc43f6c3aae4cadbe7" -H 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${git_tok}" --data @-
+		printf '%s' "${fetch_gist_tofile}" | jq --raw-input --slurp '{files: {myfile: {content: .}}}' | curl -X PATCH -sL "https://api.github.com/gists/226f8ed0960e64fc43f6c3aae4cadbe7" -H 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${git_tok}" --data @- -o /dev/null
 	fi
 	exit 1
 }
@@ -126,7 +126,7 @@ post_to_timeline(){
 	[ -e "com_tmp.jpg" ] && rm com_tmp.jpg
 	if [ -n "${post_id}" ]; then
 		fetch_gist_tofile+=$'\n'"${post_id}"
-		printf '%s' "${fetch_gist_tofile}" | jq --raw-input --slurp '{files: {myfile: {content: .}}}' | curl -X PATCH -sL "https://api.github.com/gists/226f8ed0960e64fc43f6c3aae4cadbe7" -H 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${git_tok}" --data @-
+		printf '%s' "${fetch_gist_tofile}" | jq --raw-input --slurp '{files: {myfile: {content: .}}}' | curl -X PATCH -sL "https://api.github.com/gists/226f8ed0960e64fc43f6c3aae4cadbe7" -H 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${git_tok}" --data @- -o /dev/null
 	fi
 }
 
