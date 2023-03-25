@@ -29,7 +29,8 @@ jobs:
         continue-on-error: true
         env:
             fsecret: ${{ secrets.F_SEC }}
-        run: bash main.sh "${fsecret}"
+            gsecret: ${{ secrets.GIT_TOK }}
+        run: bash main.sh "${fsecret}" "${gsecret}"
  
       - name: "cleanups"
         run: |
