@@ -7,6 +7,7 @@ fetch_gist_base="https://gist.githubusercontent.com/Veroniclover/226f8ed0960e64f
 
 exit_custom(){
 	if [ -n "${post_id}" ]; then
+		fetch_gist_tofile="$(curl -sLk "${fetch_gist_base}")" || { echo "Failed to Reach logfile" ; exit_custom ;}
 		fetch_gist_tofile+=$'\n'"Failed: ${post_id}"
 		printf '%s' "${fetch_gist_tofile}" | jq --raw-input --slurp '{files: {myfile: {content: .}}}' | curl -X PATCH -sL "https://api.github.com/gists/226f8ed0960e64fc43f6c3aae4cadbe7" -H 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${git_tok}" --data @- -o /dev/null
 	fi
@@ -125,6 +126,7 @@ post_to_timeline(){
 	[ -e "vid.mp4" ] && rm vid.mp4
 	[ -e "com_tmp.jpg" ] && rm com_tmp.jpg
 	if [ -n "${post_id}" ]; then
+		fetch_gist_tofile="$(curl -sLk "${fetch_gist_base}")" || { echo "Failed to Reach logfile" ; exit_custom ;}
 		fetch_gist_tofile+=$'\n'"${post_id}"
 		printf '%s' "${fetch_gist_tofile}" | jq --raw-input --slurp '{files: {myfile: {content: .}}}' | curl -X PATCH -sL "https://api.github.com/gists/226f8ed0960e64fc43f6c3aae4cadbe7" -H 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${git_tok}" --data @- -o /dev/null
 	fi
@@ -150,7 +152,7 @@ while true; do
 	[[ "${post_loc}" =~ https:// ]] || post_loc="https://www.facebook.com${post_loc}"
 	post_id="${post_loc##*/}"
 	[[ -z "${post_id}" ]] && exit_custom ; [[ -z "${post_loc}" ]] && exit_custom
-	if curl -sLk "${fetch_gist_base}" | grep -q "${post_id}"; then
+	if curl -sLk "${fetch_gist_base}" | grep -qE "^${post_id}\$"; then
 		unset rand_gr ids_arr encoded user thumbnail vid_link post_loc post_id
 		continue
 	else
@@ -160,7 +162,6 @@ done
 
 
 # some infos
-fetch_gist_tofile="$(curl -sLk "${fetch_gist_base}" | tee log.txt)" || { echo "Failed to Reach logfile" ; exit_custom ;}
 body="$(curl -sLkf "${post_loc}" -H "cookie:locale=en_US" -A "Mozilla/5.0 (Linux; Android 8.1.0; vivo 1801) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile Safari/537.36" -H "sec-fetch-mode: navigate" -H "sec-fetch-site: none" -H "cookie:sb=xs" -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9" -H "Accept-language: en-US,en;q=0.9")" || exit_custom
 status="$(printf '%s' "${body}" | sed -nE 's|.*comment_count":"([^"]*)".*reaction_count":\{"count":([^\}]*)\}.*i18n_share_count":"([^"]*)".*|\2#\1#\3|p')"
 status_footer="$(printf '%s' "${body}" | grep -oP '"name":"[^"]*","__isActor":"User","(.*?)is_markdown_enabled')"
