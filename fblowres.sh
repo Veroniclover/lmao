@@ -153,12 +153,7 @@ while true; do
 	post_id="${post_loc##*/}"
 	[[ -z "${post_id}" ]] && exit_custom ; [[ -z "${post_loc}" ]] && exit_custom
 	[[ "${post_id}" =~ "$(curl -sLk "${fetch_gist_base}")" ]] && exit 0
-	if curl -sLk "${fetch_gist_base}" | grep -qE "^${post_id}\$"; then
-		unset rand_gr ids_arr encoded user thumbnail vid_link post_loc post_id
-		exit 0
-	else
-		break
-	fi
+	break
 done
 
 
