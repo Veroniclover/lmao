@@ -117,24 +117,19 @@ post_to_timeline(){
 			-F "message=${comment_compose_t}" \
 			-F "source=@thumb.jpg" \
 			-o /dev/null \
-		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" ||  { curl -sLf -X POST \
-			-F "message=${comment_compose_t}" \
-			-o /dev/null \
-		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit_custom ;}
+		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || true
 	else
 		curl -sLf -X POST \
 			--data-urlencode "message=${comment_compose}" \
 			-o /dev/null \
-		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit_custom
+		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || true
 	fi
 	
 	# comment some of the commentors
 	com_commenter
 	
 	# cleanup
-	[ -e "thumb.jpg" ] && rm thumb.jpg
-	[ -e "vid.mp4" ] && rm vid.mp4
-	[ -e "com_tmp.jpg" ] && rm com_tmp.jpg
+	cleanup_files
 	if [ -n "${post_id}" ]; then
 		fetch_gist_tofile="$(curl -sLk "${fetch_gist_base}")" || { echo "Failed to Reach logfile" ; exit_custom ;}
 		fetch_gist_tofile+=$'\n'"${post_id}"
