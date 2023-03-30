@@ -14,6 +14,13 @@ exit_custom(){
 	exit 1
 }
 
+cleanup_files(){
+	[ -e "com_tmp.jpg" ] && rm com_tmp.jpg
+	[ -e "thumb.jpg" ] && rm thumb.jpg
+	[ -e "vid.mp4" ] && rm vid.mp4
+	[ -e "com_tmp.jpg" ] && rm com_tmp.jpg
+}
+
 com_commenter(){
 	while IFS= read -r comnts; do
 		usr_com="$(printf '%s' "${comnts}" | sed -nE 's|.*"user":\{"name":"([^"]*)".*|{"data":"\1"}|p' | jq -r .data)"
@@ -36,7 +43,7 @@ com_commenter(){
 		)"
 		sleep 10
 		if [ -n "${imglnk}" ]; then
-			curl -sLf "${imglnk}" -o com_tmp.jpg || exit_custom
+			curl -sLf "${imglnk}" -o com_tmp.jpg || { cleanup_files ; continue ;}
 			curl -sLf -X POST \
 				-F "message=${capt_compose}" \
 				-F "source=@com_tmp.jpg" \
@@ -110,7 +117,10 @@ post_to_timeline(){
 			-F "message=${comment_compose_t}" \
 			-F "source=@thumb.jpg" \
 			-o /dev/null \
-		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit_custom
+		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" ||  { curl -sLf -X POST \
+			-F "message=${comment_compose_t}" \
+			-o /dev/null \
+		"${graph_url_main}/v16.0/${id_post}/comments?access_token=${token}" || exit_custom ;}
 	else
 		curl -sLf -X POST \
 			--data-urlencode "message=${comment_compose}" \
@@ -152,7 +162,7 @@ while true; do
 	[[ "${post_loc}" =~ https:// ]] || post_loc="https://www.facebook.com${post_loc}"
 	post_id="${post_loc##*/}"
 	[[ -z "${post_id}" ]] && exit_custom ; [[ -z "${post_loc}" ]] && exit_custom
-	[[ "${post_id}" =~ "$(curl -sLk "${fetch_gist_base}")" ]] && exit 0
+	[[ "$(curl -sLk "${fetch_gist_base}")" =~ "${post_id}" ]] && exit 0
 	break
 done
 
