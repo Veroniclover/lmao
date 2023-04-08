@@ -37,5 +37,8 @@ get_vpn(){
 }
 
 while true; do
-	connect_proxy "chips.ovpn" || { { get_vpn || echo "error from get_vpn function" ;} ; continue ;}
+	if ! connect_proxy "chips.ovpn"; then
+		get_vpn || echo "error from get_vpn function"
+		continue
+	fi
 done
