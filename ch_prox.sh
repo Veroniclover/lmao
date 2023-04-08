@@ -21,9 +21,9 @@ connect_proxy(){
 }
 
 get_vpn(){
-	mode="tcp"
+	mode="udp"
 	hello="$(curl -sLk "https://www.vpngate.net/en/" | sed -n -E "/Japan/ s/.*.*href='(do_openvpn\.aspx[^']*)'.*/\1/p" | sed -n -E "s|.*ip=([^\&]*)\&.*|\1#https://www.vpngate.net/en/&|p")"
-	list="$(printf '%s' "${hello}" | cut -d"#" -f2 | grep -vE '219\.100' | shuf)"
+	list="$(printf '%s' "${hello}" | cut -d"#" -f2 | grep -vE '219\.100|147\.192\.213\.109' | shuf)"
 
 	while IFS= read -r lists; do
 		dl_file="$(curl -sLk "${lists}" | sed -nE 's|amp;||g;s|.*href.*"(/common/.*[0-9]_'"${mode}"'[^"]*)".*|https://www.vpngate.net\1|p')"
