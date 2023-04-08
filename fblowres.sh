@@ -91,7 +91,7 @@ post_to_timeline(){
 		curl -sLf "${thumbnail}" -o thumb.jpg || exit_custom "failed to get thumbnail"
 	fi
 	if [ -n "${vid_link}" ]; then
-		curl -sLf "${vid_link}" -o vid.mp4 || exit_custom "failed to get vid.mp4'
+		curl -sLf "${vid_link}" -o vid.mp4 || exit_custom "failed to get vid.mp4"
 	fi
 	# upload now
 	if [ -n "${vid_link}" ]; then
