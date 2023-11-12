@@ -1,12 +1,12 @@
 #!/bin/bash
-git_tok="${1}"
+git_tok="${2}"
 fetch_gist_base="https://gist.githubusercontent.com/Veroniclover/226f8ed0960e64fc43f6c3aae4cadbe7/raw/myfile"
 
 posting="$(shuf -n 1 -i 10-14)"
 i=0
 while [[ "$((i+=1))" -le "${posting}" ]]; do
     [[ "${rep_its:-0}" -ge 5 ]] && { echo "Failed 5 times" ; break ;}
-    bash fblowres.sh "${1}" "${2}" || { : "$((rep_its+=1))" ; echo "error: retrying" ; continue ;}
+    bash fblowres.sh "${1}" || { : "$((rep_its+=1))" ; echo "error: retrying" ; continue ;}
     sleep "$(awk -v "a=60" -v "b=120" -v "c=$RANDOM" 'BEGIN{srand(c);print int(a+rand()*(b-a+1))}')"
 done
 
