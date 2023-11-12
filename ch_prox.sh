@@ -21,12 +21,12 @@ connect_proxy(){
 }
 
 get_vpn(){
-	mode="udp"
-	hello="$(curl -sLk "https://www.vpngate.net/en/" | sed -n -E "/Japan/ s/.*.*href='(do_openvpn\.aspx[^']*)'.*/\1/p" | sed -n -E "s|.*ip=([^\&]*)\&.*|\1#https://www.vpngate.net/en/&|p")"
+	mode="tcp"
+	hello="$(curl -sLk "http://103.201.129.226:14684/en/" | sed -n -E "/Japan/ s/.*.*href='(do_openvpn\.aspx[^']*)'.*/\1/p" | sed -n -E "s|.*ip=([^\&]*)\&.*|\1#http://103.201.129.226:14684/en/&|p")"
 	list="$(printf '%s' "${hello}" | cut -d"#" -f2 | grep -vE '219\.100|147\.192\.213\.109' | shuf)"
 
 	while IFS= read -r lists; do
-		dl_file="$(curl -sLk "${lists}" | sed -nE 's|amp;||g;s|.*href.*"(/common/.*[0-9]_'"${mode}"'[^"]*)".*|https://www.vpngate.net\1|p')"
+		dl_file="$(curl -sLk "${lists}" | sed -nE 's|amp;||g;s|.*href.*"(/common/.*[0-9]_'"${mode}"'[^"]*)".*|http://103.201.129.226:14684\1|p')"
 		[[ -n "${dl_file}" ]] && break
 	done <<-EOF
 	$(printf '%s' "$list")
