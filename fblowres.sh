@@ -1,7 +1,6 @@
 #!/bin/bash
 
 token="${1}"
-git_tok="${2}"
 graph_api_level="v18.0"
 graph_url_main="https://graph.facebook.com"
 fetch_gist_base="https://gist.githubusercontent.com/Veroniclover/226f8ed0960e64fc43f6c3aae4cadbe7/raw/myfile"
@@ -9,9 +8,7 @@ fetch_gist_base="https://gist.githubusercontent.com/Veroniclover/226f8ed0960e64f
 exit_custom(){
 	[ -n "${1}" ] && echo "${1}" >&2
 	if [ -n "${post_id}" ]; then
-		fetch_gist_tofile="$(curl -sLkf "${fetch_gist_base}")" || { echo "Failed to Reach logfile" ; exit 1 ;}
-		fetch_gist_tofile+=$'\n'"Failed: ${post_id}"
-		printf '%s\n' "${fetch_gist_tofile}" | jq --raw-input --slurp '{files: {myfile: {content: .}}}' | curl -X PATCH -sLkf "https://api.github.com/gists/226f8ed0960e64fc43f6c3aae4cadbe7" -H 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${git_tok}" --data @- -o /dev/null || { echo "Failed to append changes \"${post_id}\"" ; exit 1 ;}
+		printf '%s\n' "Failed: ${post_id}" >> temp_log.txt
 	fi
 	exit 1
 }
@@ -142,20 +139,17 @@ post_to_timeline(){
 	# cleanup
 	cleanup_files
 	if [ -n "${post_id}" ]; then
-		fetch_gist_tofile="$(curl -sLkf "${fetch_gist_base}")" || { echo "Failed to Reach logfile" ; exit 1 ;}
-		fetch_gist_tofile+=$'\n'"${post_id}"
-		printf '%s' "${fetch_gist_tofile}" | jq --raw-input --slurp '{files: {myfile: {content: .}}}' | curl -X PATCH -sLf "https://api.github.com/gists/226f8ed0960e64fc43f6c3aae4cadbe7" -H 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${git_tok}" --data @- -o /dev/null || { echo "Failed to append changes \"${post_id}\"" ; exit 1 ;}
+		printf '%s\n' "${post_id}" >> temp_log.txt
 	fi
 }
 
-
 while true; do
-	ids_arr="1067513254080794:438519255031465:992573388177226:averagelowresmember"
+	ids_arr="777105404169098:718834402539216:1067513254080794:438519255031465:992573388177226:averagelowresmember"
 	rand_gr="$(awk -v l="${ids_arr}" -v c="$(od -vAn -N2 -tu2 < /dev/urandom | tr -dc '0-9')" 'BEGIN{srand(c);n=split(l,i,":");x=int(rand()*n)+1;print i[x]}')"
 
 	encoded="$(curl -sLk "https://mtouch.facebook.com/groups/${rand_gr}" -H 'user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36' -H 'sec-fetch-mode: navigate' -H 'sec-fetch-site: none' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9' -H 'Accept-language: en-US,en;q=0.9' | sed -E 's|data-gt="\&\#123\;\&quot\;tn\&quot\;:\&quot\;C\&quot\;\&\#125\;\"|#flag#|g;s|amp;||g;;s|&quot;|"|g;s|\&#039;|\x27|g;s|\\([[:xdigit:]]{2}) |\\x\1|g;s_%([[:xdigit:]]{2})_\\x\1_g' | grep -o -P -- "#flag#(.*?)data-sigil=\"share-popup\">Share" | sed '1d' | awk 'BEGIN{srand();while(getline){a[++n]=$0}for(i=n;i;i--){j=int(rand()*i)+1;t=a[i];a[i]=a[j];a[j]=t}}END{for(i=1;i<=n;i++)print a[i]}' | shuf -n 1)"
 	[ -z "${encoded}" ] && exit_custom "no infos returned in {encoded} variable at ${rand_gr} id group"
-	[ -e "log.txt" ] || : > log.txt
+	[ -e "temp_log.txt" ] || : > temp_log.txt
 	user="$(printf '%s' "${encoded}" | sed -nE 's_.*#flag#><span><strong><a[^>]*>([^<]*)<.*_\1_p')"
 	thumbnail="$(printf '%s' "${encoded}" | tr -dc '[:print:]' | sed -nE 's_\\\\_\\_g;'"s|.*url\('(.*n.jpg[^']*)'.*|\1|p" | sed '/.png?/ s_.*__g')"
 	[ -n "${thumbnail}" ] && thumbnail="$(printf '%b' "${thumbnail}")"
@@ -169,7 +163,7 @@ while true; do
 	post_id="${post_loc##*/}"
 	[[ -z "${post_id}" ]] && exit_custom "No post_id returned"
 	[[ -z "${post_loc}" ]] && exit_custom "No post_loc returned"
-	if curl -sLk "${fetch_gist_base}" | grep -q "${post_id}"; then
+	if (curl -sLk "${fetch_gist_base}" ; cat log.txt ; cat temp_log.txt) | sort -u | grep -q "${post_id}"; then
 		unset rand_gr ids_arr encoded user thumbnail vid_link post_loc post_id
 		continue
 	else
