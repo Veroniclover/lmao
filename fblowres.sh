@@ -172,6 +172,7 @@ done
 # some infos
 body="$(curl -sLkf "${post_loc}" -H "cookie:locale=en_US" -A "Mozilla/5.0 (Linux; Android 8.1.0; vivo 1801) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile Safari/537.36" -H "sec-fetch-mode: navigate" -H "sec-fetch-site: none" -H "cookie:sb=xs" -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9" -H "Accept-language: en-US,en;q=0.9")" || exit_custom "failed to fetch body"
 status="$(printf '%s' "${body}" | sed -nE 's|.*comment_count":"([^"]*)".*reaction_count":\{"count":([^\}]*)\}.*i18n_share_count":"([^"]*)".*|\2#\1#\3|p')"
+group_name="$(printf '%s' "${body}" | sed -nE 's|.*"group":\{"name":"([^"]*)".*|\1|p' | grep '[^[:space:]]')" || exit_custom "no groupname returned"
 
 short_rl="$(sed -E '/ExternalWebLink/!d;s|.*ExternalWebLink","url":"([^"]*)","fbclid.*|\1|g;s|\\||g' <<< "${body}")"
 if [[ -n "${short_rl}" ]]; then
@@ -192,7 +193,6 @@ caption="$(printf '%s' "$caption" | jq -r .data)"
 
 # check profane
 [ -n "${caption}" ] && caption="$(curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded; charset=UTF-8" -H "X-Requested-With:XMLHttpRequest" -H "sec-ch-ua-mobile:?1" -H "User-Agent:Mozilla/5.0 (Linux; Android 8.1.0; vivo 1801) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile Safari/537.36" -H "Origin:https://app.readable.com" -H "Sec-Fetch-Site:same-origin" -H "Sec-Fetch-Mode:cors" -H "Sec-Fetch-Dest:empty" -H "Referer:https://app.readable.com/text/profanity/" -d "type=text&batch%5B0%5D%5Btext%5D=$(sed 's|+|%2B|g;s| |+|g;s|"|%22|g;s|\x27|%27|g;s|\\|%5C|g' <<< "${caption}")&list=profanity" "https://app.readable.com/live/wordlist" | jq -r .items[].highlighted_text | sed -E 's|<span[^>]*>(.{2})([^>]*)<[^>]*>|\1**\2|g')"
-group_name="$(printf '%s' "${body}" | sed -nE 's|.*"group":\{"name":"([^"]*)".*|\1|p' | grep '[^[:space:]]')" || exit_custom "no groupname returned"
 
 post_to_timeline
 unset user thumbnail vid_link post_loc post_id caption likes comments shares date_posted body status status_footer usr_com com_capt comnts imglnk date_crcm react_tcom r_m d_m
