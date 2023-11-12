@@ -103,7 +103,7 @@ post_to_timeline(){
 		"${graph_url_main}/${graph_api_level}/me/videos")" || exit_custom "failed to upload from id_post"
 		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p')"
 		[ -z "${id_post}" ] && exit_custom "failed to upload from id_post"
-	else
+	elif [ -n "${thumbnail}" ]; then
 		id_post="$(curl -sLf -X POST \
 			-F "access_token=${token}" \
 			-F "source=@thumb.jpg" \
@@ -111,6 +111,15 @@ post_to_timeline(){
 		"${graph_url_main}/${graph_api_level}/me/photos")" || exit_custom "failed to upload from id_post"
 		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p')"
 		[ -z "${id_post}" ] && exit_custom "id_post is empty"
+	elif [ -n "${caption}" ]; then
+		id_post="$(curl -sLf -X POST \
+			-F "access_token=${token}" \
+			-F "message=${capt_compose}" \
+		"${graph_url_main}/${graph_api_level}/me/feed")" || exit_custom "failed to upload from id_post"
+		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p')"
+		[ -z "${id_post}" ] && exit_custom "id_post is empty"
+	else
+		exit_custom "Nothing to post"
 	fi
 	# comment another infos
 	sleep 10
@@ -179,8 +188,7 @@ if [[ -n "${short_rl}" ]]; then
 	body="$(curl -sLkf "${short_rl}" -H "cookie:locale=en_US" -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36" -H "sec-fetch-mode: navigate" -H "sec-fetch-site: none" -H "cookie:sb=xs" -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9" -H "Accept-language: en-US,en;q=0.9")"
 fi
 
-
-status_footer="$(printf '%s' "${body}" | grep -oP '"name":"[^"]*","__isActor":"User","(.*?)is_markdown_enabled')"
+status_footer="$(printf '%s' "${body}" | grep -oP '"name":"[^"]*","__isActor":"User","(.*?)is_markdown_enabled' | sort -u)"
 
 likes="$(printf '%s' "${status}" | cut -d'#' -f1)"
 comments="$(printf '%s' "${status}" | cut -d'#' -f2)"
