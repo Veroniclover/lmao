@@ -28,9 +28,9 @@ test_sauce(){
 	curl -sLf "$(jq -r .thumb <<< "${sauce_data}")" -o sauce.jpg || return 1
 	
 	comment_compose_sauce="$(cat <<-EOF | sed '/^$/d'
-		*- SauceBot (v0.1) [powered by g-lens] -*
-		"$(jq -r .thumb <<< "${sauce_data}")"
-		Sauce: $(jq -r .text <<< "${sauce_data}")
+		※ SauceBot (v0.1) [powered by g-lens] ※
+		Sauce: "$(jq -r .text <<< "${sauce_data}")"
+		Link: "$(jq -r .source <<< "${sauce_data}")"
 	EOF
 	)"
 	curl -sLf -X POST \
