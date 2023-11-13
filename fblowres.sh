@@ -14,10 +14,29 @@ exit_custom(){
 }
 
 cleanup_files(){
-	for fls in "com_tmp.jpg" "thumb.jpg" "vid.mp4"; do
+	for fls in "com_tmp.jpg" "thumb.jpg" "sauce.jpg" "vid.mp4"; do
 		[ -e "${fls}" ] && rm -f "${fls}"
 	done
 	: "avoid masking exit codes"
+}
+
+test_sauce(){
+	sauce_data="$(curl -sLf "https://lens.google.com/uploadbyurl?url=${1}&pli=1" -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")" || return 0
+	sauce_data="$(printf '%s' "${sauce_data}" | grep -oP '"See more Similar images"(.*?)"en",null' | sed -E 's_\[[^\]*]\]|\[|\]|,0,|null__g;s_,[-0-9,.]*,_<>_g;s_true|false__g;s|("[0-9.]*")[0-9]*,|\1<>|g;s|<><>|<>|g;s|>,|>|g' | grep -Po '"([0-9]*\.[0-9]{1,2})"(.*?)images\?(.*?)"[0-9]*\.[0-9]{1,2}"'| head -n 1 | sed -E 's|"[0-9.]*"[^<]*<>"[^"]*"<>"(http[^"]*)"<>.*,".*favicon-tbn[^"]*"<>(.*)<>(.*tbn[^<]*)".*|{"data":{"source":"\1","text":\2,"thumb":\3"}}|g;s|"[0-9.]*"<>"(http[^"]*)"<>"[^"]*"<>"(.*)<>"(http[^"]*)".*|{"data":{"source":"\3","text":"\2,"thumb":"\1"}}|g' | jq --slurp .data)" || return 0
+	[ -z "${sauce_data}" ] && return 0
+	curl -sLf "$(jq -r .thumb <<< "${sauce_data}")" -o sauce.jpg || return 0
+	
+	comment_compose_sauce="$(cat <<-EOF | sed '/^$/d'
+		*- SauceBot (v0.1) [powered by g-lens] -*
+		"$(jq -r .thumb <<< "${sauce_data}")"
+		Sauce: $(jq -r .text <<< "${sauce_data}")
+	EOF
+	)"
+	curl -sLf -X POST \
+		-F "message=${comment_compose_sauce}" \
+		-F "source=@sauce.jpg" \
+		-o /dev/null \
+	"${graph_url_main}/${graph_api_level}/${id_post}/comments?access_token=${token}" || return 0
 }
 
 com_commenter(){
@@ -134,6 +153,7 @@ post_to_timeline(){
 	fi
 	
 	# comment some of the commentors
+	test_sauce "${thumbnail}"
 	com_commenter
 	
 	# cleanup
