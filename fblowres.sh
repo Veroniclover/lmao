@@ -21,10 +21,11 @@ cleanup_files(){
 }
 
 test_sauce(){
-	sauce_data="$(curl -sLf "https://lens.google.com/uploadbyurl?url=${1}&pli=1" -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")" || return 0
-	sauce_data="$(printf '%s' "${sauce_data}" | grep -oP '"See more Similar images"(.*?)"en",null' | sed -E 's_\[[^\]*]\]|\[|\]|,0,|null__g;s_,[-0-9,.]*,_<>_g;s_true|false__g;s|("[0-9.]*")[0-9]*,|\1<>|g;s|<><>|<>|g;s|>,|>|g' | grep -Po '"([0-9]*\.[0-9]{1,2})"(.*?)images\?(.*?)"[0-9]*\.[0-9]{1,2}"'| head -n 1 | sed -E 's|"[0-9.]*"[^<]*<>"[^"]*"<>"(http[^"]*)"<>.*,".*favicon-tbn[^"]*"<>(.*)<>(.*tbn[^<]*)".*|{"data":{"source":"\1","text":\2,"thumb":\3"}}|g;s|"[0-9.]*"<>"(http[^"]*)"<>"[^"]*"<>"(.*)<>"(http[^"]*)".*|{"data":{"source":"\3","text":"\2,"thumb":"\1"}}|g' | jq --slurp .[0].data)" || return 0
-	[ -z "${sauce_data}" ] && return 0
-	curl -sLf "$(jq -r .thumb <<< "${sauce_data}")" -o sauce.jpg || return 0
+	[ -z "${sauce_img}" ] && sauce_img="$(curl -F "reqtype=fileupload" -F "fileToUpload=@thumb.jpg" https://catbox.moe/user/api.php)"
+	sauce_data="$(curl -sLf "https://lens.google.com/uploadbyurl?url=${sauce_img}&pli=1" -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")" || return 1
+	sauce_data="$(printf '%s' "${sauce_data}" | grep -oP '"See more Similar images"(.*?)"en",null' | sed -E 's_\[[^\]*]\]|\[|\]|,0,|null__g;s_,[-0-9,.]*,_<>_g;s_true|false__g;s|("[0-9.]*")[0-9]*,|\1<>|g;s|<><>|<>|g;s|>,|>|g' | grep -Po '"([0-9]*\.[0-9]{1,2})"(.*?)images\?(.*?)"[0-9]*\.[0-9]{1,2}"'| head -n 1 | sed -E 's|"[0-9.]*"[^<]*<>"[^"]*"<>"(http[^"]*)"<>.*,".*favicon-tbn[^"]*"<>(.*)<>(.*tbn[^<]*)".*|{"data":{"source":"\1","text":\2,"thumb":\3"}}|g;s|"[0-9.]*"<>"(http[^"]*)"<>"[^"]*"<>"(.*)<>"(http[^"]*)".*|{"data":{"source":"\3","text":"\2,"thumb":"\1"}}|g' | jq --slurp .[0].data)" || return 1
+	[ -z "${sauce_data}" ] && return 1
+	curl -sLf "$(jq -r .thumb <<< "${sauce_data}")" -o sauce.jpg || return 1
 	
 	comment_compose_sauce="$(cat <<-EOF | sed '/^$/d'
 		*- SauceBot (v0.1) [powered by g-lens] -*
@@ -119,6 +120,12 @@ post_to_timeline(){
 		"${graph_url_main}/${graph_api_level}/me/videos")" || exit_custom "failed to upload from id_post"
 		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p')"
 		[ -z "${id_post}" ] && exit_custom "failed to upload from id_post"
+		set -x
+		until [[ "${y:=0}" = "2" ]]; do
+			test_sauce || { : "$((y+=1))" ; echo "test_sauce failed" ; continue ;}
+			break
+		done
+		set +x
 	elif [ -n "${thumbnail}" ]; then
 		id_post="$(curl -sLf -X POST \
 			-F "access_token=${token}" \
@@ -127,6 +134,12 @@ post_to_timeline(){
 		"${graph_url_main}/${graph_api_level}/me/photos")" || exit_custom "failed to upload from id_post"
 		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p')"
 		[ -z "${id_post}" ] && exit_custom "id_post is empty"
+		set -x
+		until [[ "${y:=0}" = "2" ]]; do
+			test_sauce || { : "$((y+=1))" ; echo "test_sauce failed" ; continue ;}
+			break
+		done
+		set +x
 	elif [ -n "${caption}" ]; then
 		id_post="$(curl -sLf -X POST \
 			-F "access_token=${token}" \
@@ -153,7 +166,6 @@ post_to_timeline(){
 	fi
 	
 	# comment some of the commentors
-	test_sauce "${thumbnail}"
 	com_commenter
 	
 	# cleanup
@@ -183,7 +195,7 @@ while true; do
 	post_id="${post_loc##*/}"
 	[[ -z "${post_id}" ]] && exit_custom "No post_id returned"
 	[[ -z "${post_loc}" ]] && exit_custom "No post_loc returned"
-	if (curl -sLk "${fetch_gist_base}" ; cat log.txt ; cat temp_log.txt) | sort -u | grep -q "${post_id}"; then
+	if (curl -sLk "${fetch_gist_base}" ; cat log.txt ; cat temp_log.txt) | awk '!a[$0]++' | grep -q "${post_id}"; then
 		unset rand_gr ids_arr encoded user thumbnail vid_link post_loc post_id
 		continue
 	else
@@ -202,7 +214,7 @@ if [[ -n "${short_rl}" ]]; then
 	body="$(curl -sLkf "${short_rl}" -H "cookie:locale=en_US" -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36" -H "sec-fetch-mode: navigate" -H "sec-fetch-site: none" -H "cookie:sb=xs" -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9" -H "Accept-language: en-US,en;q=0.9")"
 fi
 
-status_footer="$(printf '%s' "${body}" | grep -oP '"name":"[^"]*","__isActor":"User","(.*?)is_markdown_enabled' | sort -u)"
+status_footer="$(printf '%s' "${body}" | grep -oP '"name":"[^"]*","__isActor":"User","(.*?)is_markdown_enabled' | awk '!a[$0]++')"
 
 likes="$(printf '%s' "${status}" | cut -d'#' -f1)"
 comments="$(printf '%s' "${status}" | cut -d'#' -f2)"
@@ -217,4 +229,4 @@ caption="$(printf '%s' "$caption" | jq -r .data)"
 [ -n "${caption}" ] && caption="$(curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded; charset=UTF-8" -H "X-Requested-With:XMLHttpRequest" -H "sec-ch-ua-mobile:?1" -H "User-Agent:Mozilla/5.0 (Linux; Android 8.1.0; vivo 1801) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile Safari/537.36" -H "Origin:https://app.readable.com" -H "Sec-Fetch-Site:same-origin" -H "Sec-Fetch-Mode:cors" -H "Sec-Fetch-Dest:empty" -H "Referer:https://app.readable.com/text/profanity/" -d "type=text&batch%5B0%5D%5Btext%5D=$(sed 's|+|%2B|g;s| |+|g;s|"|%22|g;s|\x27|%27|g;s|\\|%5C|g' <<< "${caption}")&list=profanity" "https://app.readable.com/live/wordlist" | jq -r .items[].highlighted_text | sed -E 's|<span[^>]*>(.{2})([^>]*)<[^>]*>|\1**\2|g')"
 
 post_to_timeline
-unset user thumbnail vid_link post_loc post_id caption likes comments shares date_posted body status status_footer usr_com com_capt comnts imglnk date_crcm react_tcom r_m d_m
+unset user thumbnail vid_link post_loc post_id caption likes comments shares date_posted body status status_footer usr_com com_capt comnts imglnk date_crcm react_tcom r_m d_m y
