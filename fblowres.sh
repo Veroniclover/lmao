@@ -120,12 +120,10 @@ post_to_timeline(){
 		"${graph_url_main}/${graph_api_level}/me/videos")" || exit_custom "failed to upload from id_post"
 		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p')"
 		[ -z "${id_post}" ] && exit_custom "failed to upload from id_post"
-		set -x
 		until [[ "${y:=0}" = "2" ]]; do
 			test_sauce || { : "$((y+=1))" ; echo "test_sauce failed" ; continue ;}
 			break
 		done
-		set +x
 	elif [ -n "${thumbnail}" ]; then
 		id_post="$(curl -sLf -X POST \
 			-F "access_token=${token}" \
@@ -134,12 +132,10 @@ post_to_timeline(){
 		"${graph_url_main}/${graph_api_level}/me/photos")" || exit_custom "failed to upload from id_post"
 		id_post="$(printf '%s' "${id_post}" | sed -nE 's|.*id":"([^"]*)".*|\1|p')"
 		[ -z "${id_post}" ] && exit_custom "id_post is empty"
-		set -x
 		until [[ "${y:=0}" = "2" ]]; do
 			test_sauce || { : "$((y+=1))" ; echo "test_sauce failed" ; continue ;}
 			break
 		done
-		set +x
 	elif [ -n "${caption}" ]; then
 		id_post="$(curl -sLf -X POST \
 			-F "access_token=${token}" \
