@@ -23,7 +23,7 @@ cleanup_files(){
 test_sauce(){
 	[ -z "${sauce_img}" ] && sauce_img="$(curl -F "reqtype=fileupload" -F "fileToUpload=@thumb.jpg" https://catbox.moe/user/api.php)"
 	sauce_data="$(curl -sLf "https://lens.google.com/uploadbyurl?url=${sauce_img}&pli=1" -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36")" || return 1
-	sauce_data="$(printf '%s' "${sauce_data}" | grep -oP '"See more Similar images"(.*?)"en",null' | sed -E 's_\[[^\]*]\]|\[|\]|,0,|null__g;s_,[-0-9,.]*,_<>_g;s_true|false__g;s|("[0-9.]*")[0-9]*,|\1<>|g;s|<><>|<>|g;s|>,|>|g' | grep -Po '"([0-9]*\.[0-9]{1,2})"(.*?)images\?(.*?)"[0-9]*\.[0-9]{1,2}"'| head -n 1 | sed -E 's|"[0-9.]*"[^<]*<>"[^"]*"<>"(http[^"]*)"<>.*,".*favicon-tbn[^"]*"<>(.*)<>(.*tbn[^<]*)".*|{"data":{"source":"\1","text":\2,"thumb":\3"}}|g;s|"[0-9.]*"<>"(http[^"]*)"<>"[^"]*"<>"(.*)<>"(http[^"]*)".*|{"data":{"source":"\3","text":"\2,"thumb":"\1"}}|g' | jq --slurp .[0].data)" || return 1
+	sauce_data="$(printf '%s' "${sauce_data}" | grep -oP '"See more Similar images"(.*?)"en",null' | sed -E 's_\[[^\]*]\]|\[|\]|,0,|null__g;s_,[-0-9,.]*,_<>_g;s_true|false__g;s|("[0-9.]*")[0-9]*,|\1<>|g;s|<><>|<>|g;s|>,|>|g' | grep -Po '"([0-9]*\.[0-9]{1,2})"(.*?)images\?(.*?)"[0-9]*\.[0-9]{1,2}"'| head -n 1 | sed -E 's|"[0-9.]*"[^<]*<>"[^"]*"<>"(http[^"]*)"<>.*,".*favicon-tbn[^"]*"<>(.*)<>(.*tbn[^<]*)".*|{"data":{"source":"\1","text":\2,"thumb":\3"}}|g;s|"[0-9.]*"<>"(http[^"]*)"<>"[^"]*"<>"(.*)<>"(http[^"]*)".*|{"data":{"source":"\3","text":"\2,"thumb":"\1"}}|g' | sed -E '/\{"data/!d' | jq --slurp .[0].data)" || return 1
 	[ -z "${sauce_data}" ] && return 1
 	curl -sLf "$(jq -r .thumb <<< "${sauce_data}")" -o sauce.jpg || return 1
 	
