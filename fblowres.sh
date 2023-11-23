@@ -172,7 +172,8 @@ post_to_timeline(){
 }
 
 while true; do
-	ids_arr="777105404169098:718834402539216:1067513254080794:438519255031465:992573388177226:averagelowresmember"
+	ids_arr="777105404169098:718834402539216:438519255031465:992573388177226:averagelowresmember"
+	# 1067513254080794 (deprecated)
 	rand_gr="$(awk -v l="${ids_arr}" -v c="$(od -vAn -N2 -tu2 < /dev/urandom | tr -dc '0-9')" 'BEGIN{srand(c);n=split(l,i,":");x=int(rand()*n)+1;print i[x]}')"
 
 	encoded="$(curl -sLk "https://mtouch.facebook.com/groups/${rand_gr}" -H 'user-agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36' -H 'sec-fetch-mode: navigate' -H 'sec-fetch-site: none' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9' -H 'Accept-language: en-US,en;q=0.9' | sed -E 's|data-gt="\&\#123\;\&quot\;tn\&quot\;:\&quot\;C\&quot\;\&\#125\;\"|#flag#|g;s|amp;||g;;s|&quot;|"|g;s|\&#039;|\x27|g;s|\\([[:xdigit:]]{2}) |\\x\1|g;s_%([[:xdigit:]]{2})_\\x\1_g' | grep -o -P -- "#flag#(.*?)data-sigil=\"share-popup\">Share" | sed '1d' | awk 'BEGIN{srand();while(getline){a[++n]=$0}for(i=n;i;i--){j=int(rand()*i)+1;t=a[i];a[i]=a[j];a[j]=t}}END{for(i=1;i<=n;i++)print a[i]}' | shuf -n 1)"
@@ -191,7 +192,8 @@ while true; do
 	post_id="${post_loc##*/}"
 	[[ -z "${post_id}" ]] && exit_custom "No post_id returned"
 	[[ -z "${post_loc}" ]] && exit_custom "No post_loc returned"
-	if (curl -sLk "${fetch_gist_base}" ; cat log.txt ; cat temp_log.txt) | awk '!a[$0]++' | grep -q "${post_id}"; then
+	refined_cont="$(curl -sLk "${fetch_gist_base}" ; cat log.txt ; cat temp_log.txt)"
+	if printf '%s' "${refined_cont}" | awk '!a[$0]++' | grep -q "${post_id}"; then
 		unset rand_gr ids_arr encoded user thumbnail vid_link post_loc post_id
 		continue
 	else
@@ -225,4 +227,4 @@ caption="$(printf '%s' "$caption" | jq -r .data)"
 [ -n "${caption}" ] && caption="$(curl -s -X POST -H "Content-Type:application/x-www-form-urlencoded; charset=UTF-8" -H "X-Requested-With:XMLHttpRequest" -H "sec-ch-ua-mobile:?1" -H "User-Agent:Mozilla/5.0 (Linux; Android 8.1.0; vivo 1801) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile Safari/537.36" -H "Origin:https://app.readable.com" -H "Sec-Fetch-Site:same-origin" -H "Sec-Fetch-Mode:cors" -H "Sec-Fetch-Dest:empty" -H "Referer:https://app.readable.com/text/profanity/" -d "type=text&batch%5B0%5D%5Btext%5D=$(sed 's|+|%2B|g;s| |+|g;s|"|%22|g;s|\x27|%27|g;s|\\|%5C|g' <<< "${caption}")&list=profanity" "https://app.readable.com/live/wordlist" | jq -r .items[].highlighted_text | sed -E 's|<span[^>]*>(.{2})([^>]*)<[^>]*>|\1**\2|g')"
 
 post_to_timeline
-unset user thumbnail vid_link post_loc post_id caption likes comments shares date_posted body status status_footer usr_com com_capt comnts imglnk date_crcm react_tcom r_m d_m y
+unset user thumbnail vid_link post_loc post_id caption likes comments shares date_posted body status status_footer usr_com com_capt comnts imglnk date_crcm react_tcom r_m d_m y refined_cont
